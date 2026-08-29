@@ -209,12 +209,12 @@ export async function deleteNotification(id: string) {
   return { ok: true };
 }
 
-// Delete many notifications at once: a whole category, or everything.
 export async function clearNotifications(opts?: {
-  category?: 'requests' | 'messages' | 'likes' | 'mentions';
+  category?: 'all' | 'requests' | 'messages' | 'likes' | 'mentions';
 }) {
   const userId = await getUserId();
   const base = eq(notification.recipientId, userId);
+
   if (opts?.category === 'messages') {
     await db
       .delete(notification)
@@ -237,8 +237,10 @@ export async function clearNotifications(opts?: {
         ),
       );
   } else {
+    // This catches both opts?.category === 'all' and undefined/empty opts
     await db.delete(notification).where(base);
   }
+
   return { ok: true };
 }
 
@@ -272,11 +274,10 @@ export async function getUnreadCounts() {
     total: requests + messages + likes + mentions,
   };
 }
-
 // Mark a set of notifications read, or a whole category, or everything.
 export async function markNotificationsRead(opts?: {
   ids?: string[];
-  category?: 'requests' | 'messages' | 'likes' | 'mentions';
+  category?: 'all' | 'requests' | 'messages' | 'likes' | 'mentions';
 }) {
   const userId = await getUserId();
   const base = and(
@@ -315,6 +316,7 @@ export async function markNotificationsRead(opts?: {
         ),
       );
   } else {
+    // Catches opts?.category === 'all' and undefined
     await db.update(notification).set({ readAt: new Date() }).where(base);
   }
   return { ok: true };

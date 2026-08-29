@@ -423,16 +423,18 @@
     "aria": "Notifications",
     "clearAll": "Clear all",
     "tabs": {
+      "all": "All",
       "requests": "Requests",
       "messages": "Messages",
       "likes": "Likes",
       "mentions": "Mentions"
     },
     "empty": {
-      "requests": "No friend requests right now.",
-      "messages": "No new message notifications.",
-      "likes": "No likes on your posts yet.",
-      "mentions": "No mentions yet. You'll see @tags here."
+      "all": "No new notifications.",
+      "requests": "No new friend requests.",
+      "messages": "No new messages.",
+      "likes": "No new likes on your posts.",
+      "mentions": "No new mentions."
     },
     "accept": "Accept",
     "decline": "Decline",

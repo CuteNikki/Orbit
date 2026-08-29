@@ -66,7 +66,7 @@ type Counts = {
 };
 
 // The inbox tabs, also used as the category key for read/clear actions.
-type Tab = 'requests' | 'messages' | 'likes' | 'mentions';
+type Tab = 'all' | 'requests' | 'messages' | 'likes' | 'mentions';
 
 // Compact per-tab unread indicator. Absolutely positioned in the trigger's
 // top-right corner so it stays out of the flex row — otherwise its width would
@@ -267,32 +267,40 @@ export function NotificationBell({
   // Mark the active tab's notifications read shortly after viewing.
   useEffect(() => {
     if (!open) return;
+
     const list =
-      tab === 'messages'
-        ? messages
-        : tab === 'likes'
-          ? likes
-          : tab === 'mentions'
-            ? mentions
-            : requests;
+      tab === 'all'
+        ? items
+        : tab === 'messages'
+          ? messages
+          : tab === 'likes'
+            ? likes
+            : tab === 'mentions'
+              ? mentions
+              : requests;
+
     if (!list.some((n) => !n.read)) return;
+
     const t = setTimeout(async () => {
       await markNotificationsRead({ category: tab });
       setItems((prev) =>
         prev.map((n) => {
           const inTab =
-            tab === 'messages'
-              ? isMessage(n)
-              : tab === 'likes'
-                ? isLike(n)
-                : tab === 'mentions'
-                  ? isMention(n)
-                  : !isMessage(n) && !isLike(n) && !isMention(n);
+            tab === 'all'
+              ? true
+              : tab === 'messages'
+                ? isMessage(n)
+                : tab === 'likes'
+                  ? isLike(n)
+                  : tab === 'mentions'
+                    ? isMention(n)
+                    : !isMessage(n) && !isLike(n) && !isMention(n);
           return inTab ? { ...n, read: true } : n;
         }),
       );
       mutate();
     }, 800);
+
     return () => clearTimeout(t);
   }, [open, tab, requests, messages, likes, mentions, mutate]);
 
@@ -335,6 +343,7 @@ export function NotificationBell({
     const category = tab;
     setItems((prev) =>
       prev.filter((n) => {
+        if (category === 'all') return false;
         if (category === 'messages') return !isMessage(n);
         if (category === 'likes') return !isLike(n);
         if (category === 'mentions') return !isMention(n);
@@ -355,19 +364,22 @@ export function NotificationBell({
     if (href) router.push(href);
   }
 
+  const unreadNotifications = items.filter((n) => !n.read);
   const unreadRequests = requests.filter((n) => !n.read).length;
   const unreadMessages = messages.filter((n) => !n.read).length;
   const unreadLikes = likes.filter((n) => !n.read).length;
   const unreadMentions = mentions.filter((n) => !n.read).length;
 
   const activeList =
-    tab === 'messages'
-      ? messages
-      : tab === 'likes'
-        ? likes
-        : tab === 'mentions'
-          ? mentions
-          : requests;
+    tab === 'all'
+      ? items
+      : tab === 'messages'
+        ? messages
+        : tab === 'likes'
+          ? likes
+          : tab === 'mentions'
+            ? mentions
+            : requests;
 
   return (
     <>
@@ -399,7 +411,7 @@ export function NotificationBell({
 
         <PopoverContent
           align='end'
-          className='w-[calc(100vw-1.5rem)] p-0 sm:w-108'
+          className='w-[calc(100vw-1.5rem)] p-0 sm:w-140'
         >
           <div className='border-border flex items-center justify-between gap-2 border-b px-3 py-2.5'>
             <h2 className='text-sm font-semibold'>
@@ -418,7 +430,24 @@ export function NotificationBell({
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
             <div className='px-4 pt-4'>
-              <TabsList className='w-full'>
+              <TabsList className='flex w-full scrollbar-none justify-start overflow-x-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
+                <TabsTrigger
+                  value='all'
+                  aria-label={t('notifications.tabs.all')}
+                  className='gap-1'
+                >
+                  <Bell className='size-4' aria-hidden />
+                  <span className='hidden sm:inline'>
+                    {t('notifications.tabs.all')}
+                  </span>
+                  {unreadNotifications.length > 0 ? (
+                    <Badge className={unreadBadgeClass}>
+                      {unreadNotifications.length > 9
+                        ? '9+'
+                        : unreadNotifications.length}
+                    </Badge>
+                  ) : null}
+                </TabsTrigger>
                 <TabsTrigger
                   value='requests'
                   aria-label={t('notifications.tabs.requests')}
@@ -492,6 +521,75 @@ export function NotificationBell({
                 </div>
               ) : (
                 <>
+                  <TabsContent value='all'>
+                    {items.length === 0 ? (
+                      <EmptyState label={t('notifications.empty.all')} />
+                    ) : (
+                      <ul className='flex flex-col gap-1.5'>
+                        {items.map((n) => {
+                          const category =
+                            n.type === 'LIKE'
+                              ? 'likes'
+                              : n.type === 'MENTION'
+                                ? 'mentions'
+                                : n.type === 'MESSAGE'
+                                  ? 'messages'
+                                  : 'requests';
+                          if (category === 'likes') {
+                            return (
+                              <LikeRow
+                                key={n.id}
+                                n={n}
+                                username={username}
+                                onView={() =>
+                                  n.actorId && setPreviewUserId(n.actorId)
+                                }
+                                onDelete={() => remove(n)}
+                                onNavigate={() => setOpen(false)}
+                              />
+                            );
+                          }
+                          if (category === 'mentions') {
+                            return (
+                              <MentionRow
+                                key={n.id}
+                                n={n}
+                                onView={() =>
+                                  n.actorId && setPreviewUserId(n.actorId)
+                                }
+                                onDelete={() => remove(n)}
+                                onNavigate={() => setOpen(false)}
+                              />
+                            );
+                          }
+                          if (category === 'messages') {
+                            return (
+                              <MessageRow
+                                key={n.id}
+                                n={n}
+                                onOpen={() => openMessage(n)}
+                                onDelete={() => remove(n)}
+                              />
+                            );
+                          }
+                          return (
+                            <RequestRow
+                              key={n.id}
+                              n={n}
+                              busy={busyId === n.id}
+                              onAccept={() => respond(n, true)}
+                              onDecline={() => respond(n, false)}
+                              onView={() =>
+                                n.actorId && setPreviewUserId(n.actorId)
+                              }
+                              onDelete={() => remove(n)}
+                            />
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </TabsContent>
+
                   <TabsContent value='requests'>
                     {requests.length === 0 ? (
                       <EmptyState label={t('notifications.empty.requests')} />

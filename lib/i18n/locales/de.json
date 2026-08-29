@@ -423,16 +423,18 @@
     "aria": "Benachrichtigungen",
     "clearAll": "Alle löschen",
     "tabs": {
+      "all": "Alle",
       "requests": "Anfragen",
       "messages": "Nachrichten",
       "likes": "Likes",
       "mentions": "Erwähnungen"
     },
     "empty": {
-      "requests": "Gerade keine Freundschaftsanfragen.",
-      "messages": "Keine neuen Nachrichtenbenachrichtigungen.",
-      "likes": "Noch keine Likes für deine Beiträge.",
-      "mentions": "Noch keine Erwähnungen. @Markierungen erscheinen hier."
+      "all": "Keine Benachrichtigungen derzeit.",
+      "requests": "Keine neuen Freundschaftsanfragen.",
+      "messages": "Keine neuen Nachrichten.",
+      "likes": "Keine neuen Likes auf Beiträge.",
+      "mentions": "Keine neuen Erwähnungen."
     },
     "accept": "Annehmen",
     "decline": "Ablehnen",

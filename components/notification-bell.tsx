@@ -14,6 +14,7 @@ import {
   Bell,
   Check,
   Heart,
+  InboxIcon,
   Loader2,
   MessageCircle,
   Trash2,
@@ -436,7 +437,7 @@ export function NotificationBell({
                   aria-label={t('notifications.tabs.all')}
                   className='gap-1'
                 >
-                  <Bell className='size-4' aria-hidden />
+                  <InboxIcon className='shrink-0' aria-hidden />
                   <span className='hidden sm:inline'>
                     {t('notifications.tabs.all')}
                   </span>
@@ -453,7 +454,7 @@ export function NotificationBell({
                   aria-label={t('notifications.tabs.requests')}
                   className='gap-1'
                 >
-                  <UserPlus className='size-4' aria-hidden />
+                  <UserPlus className='shrink-0' aria-hidden />
                   <span className='hidden sm:inline'>
                     {t('notifications.tabs.requests')}
                   </span>
@@ -468,7 +469,7 @@ export function NotificationBell({
                   aria-label={t('notifications.tabs.messages')}
                   className='gap-1'
                 >
-                  <MessageCircle className='size-4' aria-hidden />
+                  <MessageCircle className='shrink-0' aria-hidden />
                   <span className='hidden sm:inline'>
                     {t('notifications.tabs.messages')}
                   </span>
@@ -483,7 +484,7 @@ export function NotificationBell({
                   aria-label={t('notifications.tabs.likes')}
                   className='gap-1'
                 >
-                  <Heart className='size-4' aria-hidden />
+                  <Heart className='shrink-0' aria-hidden />
                   <span className='hidden sm:inline'>
                     {t('notifications.tabs.likes')}
                   </span>
@@ -498,7 +499,7 @@ export function NotificationBell({
                   aria-label={t('notifications.tabs.mentions')}
                   className='gap-1'
                 >
-                  <AtSign className='size-4' aria-hidden />
+                  <AtSign className='shrink-0' aria-hidden />
                   <span className='hidden sm:inline'>
                     {t('notifications.tabs.mentions')}
                   </span>

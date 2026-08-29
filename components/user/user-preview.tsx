@@ -71,7 +71,8 @@ export function UserPreviewDialog({
             <UserAvatar
               name={profile.name}
               image={profile.image}
-              className='size-20'
+                className='size-20'
+                fontSize='3xl'
             />
             <div className='flex flex-col'>
               <span className='text-lg font-semibold text-balance'>

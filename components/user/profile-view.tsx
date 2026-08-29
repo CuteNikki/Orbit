@@ -44,6 +44,7 @@ export function ProfileView({
             name={profile.name}
             image={profile.image}
             className='size-24 sm:size-32'
+            fontSize='3xl'
           />
           <div className='flex flex-1 flex-col gap-4'>
             <div className='flex flex-col gap-2'>

@@ -55,6 +55,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
@@ -748,6 +749,7 @@ export function ChatRoom({
                                   )}
                                   {!g.mine && (
                                     <DropdownMenuItem
+                                      variant='destructive'
                                       onSelect={() =>
                                         setReportTarget({
                                           reportedUserId: m.senderId,
@@ -762,13 +764,16 @@ export function ChatRoom({
                                     </DropdownMenuItem>
                                   )}
                                   {!g.mine && canModerate && (
-                                    <DropdownMenuItem
-                                      variant='destructive'
-                                      onSelect={() => moderatorRemove(m)}
-                                    >
-                                      <ShieldX aria-hidden />
-                                      {t('chat.room.removeMessage')}
-                                    </DropdownMenuItem>
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        variant='destructive'
+                                        onSelect={() => moderatorRemove(m)}
+                                      >
+                                        <ShieldX aria-hidden />
+                                        {t('chat.room.removeMessage')}
+                                      </DropdownMenuItem>
+                                    </>
                                   )}
                                 </DropdownMenuContent>
                               </DropdownMenu>

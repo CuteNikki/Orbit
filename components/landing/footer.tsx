@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 
 import { Separator } from '@/components/ui/separator';
 
+import { useLandingScrollContainer } from './landing-scroll';
+
 const GROUPS: {
   titleKey: string;
   links: { labelKey: string; href: string }[];
@@ -38,6 +40,7 @@ const GROUPS: {
 
 export function LandingFooter() {
   const { t } = useTranslation();
+  const scrollContainer = useLandingScrollContainer();
 
   return (
     <footer className='xs:p-6 mx-auto w-full max-w-7xl p-4'>
@@ -74,7 +77,10 @@ export function LandingFooter() {
           {t('landing.footer.rights', { year: new Date().getFullYear() })}
         </span>
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          type='button'
+          onClick={() =>
+            scrollContainer?.current?.scrollTo({ top: 0, behavior: 'smooth' })
+          }
           className='text-muted-foreground hover:text-foreground focus:text-foreground flex items-center gap-1 text-xs uppercase transition-colors'
         >
           {t('landing.footer.backToTop')}

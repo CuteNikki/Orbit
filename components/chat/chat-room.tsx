@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user/user-avatar';
+import { useComposition } from '@/hooks/use-composition';
 
 // Consecutive messages from the same sender within this window collapse into
 // one visual group (single avatar + one name/time footer).
@@ -247,6 +248,7 @@ export function ChatRoom({
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composition = useComposition();
 
   // Scroll bookkeeping. `stickToBottom` tracks whether the viewport is parked
   // at the newest message, so late-loading images or an incoming message keep
@@ -931,9 +933,11 @@ export function ChatRoom({
                 ref={textareaRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                {...composition.handlers}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
-                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                    // Don't send the Enter that confirms an IME composition.
+                    if (composition.isComposing(e)) return;
                     e.preventDefault();
                     submit(e);
                   }

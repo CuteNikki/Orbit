@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useComposition } from '@/hooks/use-composition';
 
 const FEED_PATH = '/app/feed';
 
@@ -65,6 +66,7 @@ export function FeedControls({ tab, query, tags }: Props) {
   // Set right before a tab switch so the debounced search-sync below skips one
   // run and can't fight the browse navigation we're about to push.
   const suppress = useRef(false);
+  const composition = useComposition();
   const listboxId = useId();
 
   const tagsKey = tags.join(',');
@@ -158,7 +160,7 @@ export function FeedControls({ tab, query, tags }: Props) {
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing) return;
+    if (composition.isComposing(e)) return;
     if (open && e.key === 'ArrowDown') {
       e.preventDefault();
       setActive((a) => (a + 1) % suggests.length);
@@ -232,6 +234,7 @@ export function FeedControls({ tab, query, tags }: Props) {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
+            {...composition.handlers}
             onKeyDown={onKeyDown}
             onBlur={() => setSuggests([])}
             placeholder={

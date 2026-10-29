@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user/user-avatar';
 import type { HashtagSuggestion, MentionSuggestion } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useComposition } from '@/hooks/use-composition';
 
 // The text immediately before the caret that counts as an in-progress token: a
 // sigil ("@" or "#") that begins a word (start of string or preceded by a char
@@ -78,6 +79,7 @@ type Props = Omit<
 export function MentionTextarea({ value, onValueChange, ...props }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLTextAreaElement>(null);
+  const composition = useComposition();
   const [token, setToken] = useState<ActiveToken | null>(null);
   const [results, setResults] = useState<Suggestion[]>([]);
   const [active, setActive] = useState(0);
@@ -163,7 +165,7 @@ export function MentionTextarea({ value, onValueChange, ...props }: Props) {
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     // Let IME composition run without hijacking keys.
-    if (e.nativeEvent.isComposing) return;
+    if (composition.isComposing(e)) return;
     if (!open) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -193,6 +195,7 @@ export function MentionTextarea({ value, onValueChange, ...props }: Props) {
         onKeyUp={syncToken}
         onClick={syncToken}
         onBlur={close}
+        {...composition.handlers}
         onKeyDown={onKeyDown}
         aria-autocomplete='list'
         aria-expanded={open}

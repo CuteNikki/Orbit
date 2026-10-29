@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MentionTextarea } from '@/components/user/mention-textarea';
 import { UserAvatar } from '@/components/user/user-avatar';
+import { useComposition } from '@/hooks/use-composition';
 
 type Profile = {
   id: string;
@@ -63,6 +64,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
   const [tagDraft, setTagDraft] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const composition = useComposition();
 
   function addTag(raw: string) {
     const normalized = normalizeTag(raw);
@@ -84,7 +86,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
   }
 
   function onTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (composition.isComposing(e)) return;
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag(tagDraft);
@@ -346,6 +348,7 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
             id='interests'
             value={tagDraft}
             onChange={(e) => setTagDraft(e.target.value)}
+            {...composition.handlers}
             onKeyDown={onTagKeyDown}
             onBlur={() => tagDraft.trim() && addTag(tagDraft)}
             placeholder={

@@ -12,6 +12,7 @@ import type { PostSummary } from '@/lib/types';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PostCard } from '@/components/user/post-card';
+import { useSyncedState } from '@/hooks/use-synced-state';
 
 export function PostGrid({
   posts,
@@ -22,7 +23,7 @@ export function PostGrid({
   isOwnProfile?: boolean;
   canModerate?: boolean;
 }) {
-  const [items, setItems] = useState<PostSummary[]>(posts);
+  const [items, setItems] = useSyncedState<PostSummary[]>(posts);
   const [activeId, setActiveId] = useState<string | null>(null);
   const { t } = useTranslation();
   // Tracks the open post's fullscreen image viewer. While it's up, the dialog
@@ -33,21 +34,23 @@ export function PostGrid({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // A ?post= deep link opens that post (once it's among the loaded ones),
+  // then drops out of the URL.
+  const postParam = searchParams.get('post');
+  const linkedPostId =
+    postParam && items.some((p) => p.id === postParam) ? postParam : null;
+  const [prevLinkedPostId, setPrevLinkedPostId] = useState(linkedPostId);
+  if (linkedPostId !== prevLinkedPostId) {
+    setPrevLinkedPostId(linkedPostId);
+    if (linkedPostId) setActiveId(linkedPostId);
+  }
   useEffect(() => {
-    setItems(posts);
-  }, [posts]);
-
-  useEffect(() => {
-    const postId = searchParams.get('post');
-    if (!postId) return;
-    if (items.some((p) => p.id === postId)) {
-      setActiveId(postId);
-      const params = new URLSearchParams(searchParams);
-      params.delete('post');
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    }
-  }, [searchParams, items, router, pathname]);
+    if (!linkedPostId) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete('post');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [linkedPostId, searchParams, router, pathname]);
 
   const active = items.find((p) => p.id === activeId) ?? null;
 

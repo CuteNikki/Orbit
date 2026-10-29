@@ -14,6 +14,10 @@ import {
 } from '@/lib/i18n/settings';
 import { cn } from '@/lib/utils';
 
+function saveLanguage(lng: Language) {
+  document.cookie = `${cookieName}=${lng}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 // Persists the choice in a cookie and calls router.refresh() so server
 // components re-render in the new language; the client instance switches
 // immediately via i18n.changeLanguage.
@@ -25,7 +29,7 @@ export function LanguageSwitcher() {
 
   function change(lng: Language) {
     if (lng === current) return;
-    document.cookie = `${cookieName}=${lng}; path=/; max-age=31536000; SameSite=Lax`;
+    saveLanguage(lng);
     void i18n.changeLanguage(lng);
     startTransition(() => router.refresh());
   }

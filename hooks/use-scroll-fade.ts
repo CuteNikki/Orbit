@@ -4,9 +4,11 @@ import { useCallback, useRef, useState } from 'react';
 
 // Tracks whether a scroll container overflows and where it's currently parked,
 // so callers can show a top/bottom edge fade only when there's hidden content
-// in that direction. Attach `ref` to the scrollable element and `check` to its
-// onScroll handler; call `check()` again after the content changes (e.g. new
-// items) so the flags stay in sync when the scroll position hasn't moved.
+// in that direction. Attach the returned ref to the scrollable element and
+// `check` to its onScroll handler; call `check()` again after the content
+// changes (e.g. new items) so the flags stay in sync when the scroll position
+// hasn't moved. The ref comes apart from the flags so reading them isn't
+// mistaken for reading a ref during render.
 export function useScrollFade<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [scrollable, setScrollable] = useState(false);
@@ -21,5 +23,5 @@ export function useScrollFade<T extends HTMLElement>() {
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 10);
   }, []);
 
-  return { ref, scrollable, atTop, atBottom, check };
+  return [ref, { scrollable, atTop, atBottom, check }] as const;
 }

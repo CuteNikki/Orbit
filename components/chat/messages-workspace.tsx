@@ -61,9 +61,11 @@ export function MessagesWorkspace({
 
   // Conversations kept in local state so we can drop one instantly on unfriend.
   const [convos, setConvos] = useState(conversations);
-  useEffect(() => {
+  const [prevConversations, setPrevConversations] = useState(conversations);
+  if (conversations !== prevConversations) {
+    setPrevConversations(conversations);
     setConvos(conversations);
-  }, [conversations]);
+  }
 
   // Only open a conversation when one is explicitly requested (deep link via
   // ?c=). Otherwise the user must pick a conversation themselves.
@@ -73,7 +75,7 @@ export function MessagesWorkspace({
       : null,
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(activeId !== null);
   const [query, setQuery] = useState('');
   const [previewUserId, setPreviewUserId] = useState<string | null>(null);
   const [menuBusy, setMenuBusy] = useState(false);
@@ -87,14 +89,17 @@ export function MessagesWorkspace({
     }
   }, [activeId, router, searchParams]);
 
-  // Load messages when the active conversation changes.
+  // Load messages when the active conversation changes. The previous
+  // conversation's stay up while the next one loads; closing it clears them.
+  const [prevActiveId, setPrevActiveId] = useState(activeId);
+  if (activeId !== prevActiveId) {
+    setPrevActiveId(activeId);
+    setLoading(activeId !== null);
+    if (!activeId) setMessages([]);
+  }
   useEffect(() => {
-    if (!activeId) {
-      setMessages([]);
-      return;
-    }
+    if (!activeId) return;
     let cancelled = false;
-    setLoading(true);
     getMessages(activeId)
       .then((m) => {
         if (!cancelled) setMessages(m);

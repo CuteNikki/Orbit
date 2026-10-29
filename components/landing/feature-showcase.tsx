@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   ImageIcon,
@@ -199,7 +199,9 @@ export function FeatureShowcase() {
   const progressRef = useRef(0);
   const pausedRef = useRef(false);
 
-  activeRef.current = active;
+  useLayoutEffect(() => {
+    activeRef.current = active;
+  });
 
   const select = (i: number) => {
     progressRef.current = 0;

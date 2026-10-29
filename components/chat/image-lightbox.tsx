@@ -5,6 +5,7 @@ import { Minus, Plus, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { useMounted } from '@/hooks/use-mounted';
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 6;
@@ -27,21 +28,22 @@ export function ImageLightbox({
   onCloseAction: () => void;
 }) {
   const { t } = useTranslation();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const dragStart = useRef<{ pointer: Point; offset: Point } | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
   // Reset the transform every time the viewer opens (or the image changes).
-  useEffect(() => {
+  const shown = open ? src : null;
+  const [prevShown, setPrevShown] = useState(shown);
+  if (shown !== prevShown) {
+    setPrevShown(shown);
     if (open) {
       setScale(1);
       setOffset({ x: 0, y: 0 });
     }
-  }, [open, src]);
+  }
 
   // Lock body scroll + wire Esc while open.
   useEffect(() => {
@@ -61,12 +63,10 @@ export function ImageLightbox({
   const clampScale = (s: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
 
   const zoomTo = useCallback((next: number) => {
-    setScale((prev) => {
-      const s = clampScale(next);
-      // Recenter when returning to 1× so the image never sits off-screen.
-      if (s === 1) setOffset({ x: 0, y: 0 });
-      return s;
-    });
+    const s = clampScale(next);
+    // Recenter when returning to 1× so the image never sits off-screen.
+    if (s === 1) setOffset({ x: 0, y: 0 });
+    setScale(s);
   }, []);
 
   const onWheel = useCallback(
@@ -158,7 +158,6 @@ export function ImageLightbox({
         </button>
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt ?? ''}

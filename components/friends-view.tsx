@@ -20,6 +20,7 @@ import {
 } from '@/components/user/friendship-buttons';
 import { UserAvatar } from '@/components/user/user-avatar';
 import { UserPreviewDialog } from '@/components/user/user-preview';
+import { useSyncedState } from '@/hooks/use-synced-state';
 
 export function FriendsView({
   initialIncoming,
@@ -32,29 +33,29 @@ export function FriendsView({
 }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
-  const [searching, setSearching] = useState(false);
+  // The query the current results are for; it's still searching until they
+  // match what's typed.
+  const [searchedFor, setSearchedFor] = useState<string | null>(null);
 
-  const [incoming, setIncoming] = useState(initialIncoming);
-  const [outgoing, setOutgoing] = useState(initialOutgoing);
-  const [friends, setFriends] = useState(initialFriends);
+  // Synced from server data on refresh
+  const [incoming, setIncoming] = useSyncedState(initialIncoming);
+  const [outgoing, setOutgoing] = useSyncedState(initialOutgoing);
+  const [friends, setFriends] = useSyncedState(initialFriends);
 
   const [previewUserId, setPreviewUserId] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  // Sync server data to local state on refresh
-  useEffect(() => setIncoming(initialIncoming), [initialIncoming]);
-  useEffect(() => setOutgoing(initialOutgoing), [initialOutgoing]);
-  useEffect(() => setFriends(initialFriends), [initialFriends]);
-
-  // Debounced username search
+  // Debounced username search, from two characters on
+  const q = query.trim();
+  const active = q.length >= 2;
+  const searching = active && searchedFor !== q;
+  const [prevActive, setPrevActive] = useState(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
+    if (!active) setResults([]);
+  }
   useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
+    if (!active) return;
     const t = setTimeout(async () => {
       try {
         const res = await searchUsers(q);
@@ -62,11 +63,11 @@ export function FriendsView({
       } catch {
         setResults([]);
       } finally {
-        setSearching(false);
+        setSearchedFor(q);
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [active, q]);
 
   const handleStatusChange = (
     userId: string,

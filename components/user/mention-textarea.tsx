@@ -93,13 +93,20 @@ export function MentionTextarea({ value, onValueChange, ...props }: Props) {
 
   // Query for suggestions whenever the partial changes (debounced), and drop
   // stale responses so fast typing can't flash an old result set.
+  // Wait for at least one character after the sigil before listing anything.
+  const searchable = token !== null && token.query.length >= 1;
+  const [prevSearchable, setPrevSearchable] = useState(searchable);
+  if (searchable !== prevSearchable) {
+    setPrevSearchable(searchable);
+    if (!searchable) setResults([]);
+  }
+  const tokenKind = token?.kind;
+  const tokenQuery = token?.query;
+  const tokenStart = token?.start;
   useEffect(() => {
-    if (!token || token.query.length < 1) {
-      // Wait for at least one character after the sigil before listing anything.
-      setResults([]);
-      return;
-    }
-    const { kind, query } = token;
+    if (!tokenKind || !tokenQuery) return;
+    const kind = tokenKind;
+    const query = tokenQuery;
     let live = true;
     const t = setTimeout(async () => {
       try {
@@ -125,7 +132,7 @@ export function MentionTextarea({ value, onValueChange, ...props }: Props) {
       live = false;
       clearTimeout(t);
     };
-  }, [token?.kind, token?.query, token?.start]);
+  }, [tokenKind, tokenQuery, tokenStart]);
 
   function close() {
     setToken(null);

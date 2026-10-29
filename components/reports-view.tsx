@@ -444,7 +444,6 @@ function ReportCard({
                 className='ring-ring mt-2 block shrink-0 cursor-zoom-in rounded-md outline-none focus-visible:ring-2'
                 aria-label='View reported image'
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={report.message.imageUrl}
                   alt='Reported message attachment'
@@ -585,19 +584,22 @@ function MessageContextDialog({
   onViewImage: (src: string) => void;
 }) {
   const [items, setItems] = useState<ReportedMessageContextItem[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(target !== null);
 
   const open = target !== null;
   const targetId = target?.id ?? null;
 
-  useEffect(() => {
-    if (!targetId) {
-      setItems(null);
-      return;
-    }
-    let active = true;
-    setLoading(true);
+  // Start over whenever a new report opens (or the dialog closes).
+  const [prevTargetId, setPrevTargetId] = useState(targetId);
+  if (targetId !== prevTargetId) {
+    setPrevTargetId(targetId);
     setItems(null);
+    if (targetId) setLoading(true);
+  }
+
+  useEffect(() => {
+    if (!targetId) return;
+    let active = true;
     getReportedMessageContext(targetId)
       .then((rows) => {
         if (active) setItems(rows);
@@ -710,7 +712,6 @@ function ContextMessage({
             className='ring-ring mt-1 block cursor-zoom-in rounded-md outline-none focus-visible:ring-2'
             aria-label='View image'
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={message.imageUrl}
               alt='Message attachment'
@@ -745,22 +746,24 @@ function UserHistoryDialog({
 }) {
   const [bans, setBans] = useState<BanHistoryEntry[] | null>(null);
   const [reports, setReports] = useState<ReportHistoryItem[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(target?.reportedUser != null);
 
   const open = target !== null;
   const userId = target?.reportedUser?.id ?? null;
   const name = target?.reportedUser?.name ?? 'this user';
 
-  useEffect(() => {
-    if (!userId) {
-      setBans(null);
-      setReports(null);
-      return;
-    }
-    let active = true;
-    setLoading(true);
+  // Start over whenever another user's history opens (or the dialog closes).
+  const [prevUserId, setPrevUserId] = useState(userId);
+  if (userId !== prevUserId) {
+    setPrevUserId(userId);
     setBans(null);
     setReports(null);
+    if (userId) setLoading(true);
+  }
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
     Promise.all([getBanHistory(userId), listReportsAgainstUser(userId)])
       .then(([banRows, reportRows]) => {
         if (active) {
@@ -971,13 +974,19 @@ function ReportBanDialog({
 
   // Reset the draft whenever a new report opens the dialog. Seed the reason with
   // the reporter's stated reason so the moderator can keep or edit it.
-  useEffect(() => {
-    if (!targetId) return;
-    setReason(target?.reason ?? '');
-    setDurationKey('7');
-    setBanIp(false);
-    setSubmitting(false);
-  }, [targetId, target?.reason]);
+  const draftFor = targetId
+    ? [targetId, target?.reason ?? ''].join('\0')
+    : null;
+  const [prevDraftFor, setPrevDraftFor] = useState(draftFor);
+  if (draftFor !== prevDraftFor) {
+    setPrevDraftFor(draftFor);
+    if (draftFor !== null) {
+      setReason(target?.reason ?? '');
+      setDurationKey('7');
+      setBanIp(false);
+      setSubmitting(false);
+    }
+  }
 
   function submit() {
     if (!target) return;

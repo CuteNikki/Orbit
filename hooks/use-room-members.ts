@@ -19,11 +19,15 @@ export type RoomMember = {
 export function useRoomMembers(chatId: string | null): RoomMember[] {
   const [members, setMembers] = useState<RoomMember[]>([]);
 
+  // A new room (or none) starts from an empty roster until its own is read
+  const [prevChatId, setPrevChatId] = useState(chatId);
+  if (chatId !== prevChatId) {
+    setPrevChatId(chatId);
+    setMembers([]);
+  }
+
   useEffect(() => {
-    if (!chatId) {
-      setMembers([]);
-      return;
-    }
+    if (!chatId) return;
     const channel = acquireChannel(chatChannel(chatId));
 
     const read = () => {

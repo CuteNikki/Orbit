@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { postCallSummary, sendCallSignal } from '@/app/actions/call';
 import { EVENTS } from '@/lib/pusher/channels';
@@ -18,12 +24,7 @@ import type {
 // spans "accepted, ICE negotiating"; `connected` is media flowing; `ended` is a
 // terminal display state that auto-resets to `idle`.
 export type CallStatus =
-  | 'idle'
-  | 'outgoing'
-  | 'incoming'
-  | 'connecting'
-  | 'connected'
-  | 'ended';
+  'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected' | 'ended';
 
 export type CallDirection = 'outgoing' | 'incoming' | null;
 
@@ -81,7 +82,9 @@ export function useWebRTCCall(me: CallPeer) {
   // Mirrors of state that the imperative signal handlers need to read fresh.
   const statusRef = useRef<CallStatus>('idle');
   const meRef = useRef(me);
-  meRef.current = me;
+  useLayoutEffect(() => {
+    meRef.current = me;
+  });
   const peerRef = useRef<CallPeer | null>(null);
   const callIdRef = useRef<string | null>(null);
   // Where to send our outbound signals back to (the other party + chat).
@@ -415,7 +418,9 @@ export function useWebRTCCall(me: CallPeer) {
       });
       // If the offer never reached the callee, don't ring into the void.
       if (!sent.ok) {
-        finishCall(sent.error ? `Couldn't call: ${sent.error}` : 'Could not connect');
+        finishCall(
+          sent.error ? `Couldn't call: ${sent.error}` : 'Could not connect',
+        );
         return;
       }
       // The offer landed — from here on the call is worth summarizing (even if
@@ -505,7 +510,9 @@ export function useWebRTCCall(me: CallPeer) {
         video: offer.video,
       });
     } catch {
-      finishCall('Microphone/camera unavailable', { event: EVENTS.CALL_DECLINE });
+      finishCall('Microphone/camera unavailable', {
+        event: EVENTS.CALL_DECLINE,
+      });
       return;
     }
     localStreamRef.current = stream;
@@ -519,7 +526,8 @@ export function useWebRTCCall(me: CallPeer) {
     // can be enabled later without renegotiation.
     for (const tx of pc.getTransceivers()) {
       if (tx.currentDirection !== 'stopped') tx.direction = 'sendrecv';
-      if (tx.receiver.track?.kind === 'video') videoSenderRef.current = tx.sender;
+      if (tx.receiver.track?.kind === 'video')
+        videoSenderRef.current = tx.sender;
     }
 
     const answer = await pc.createAnswer();
@@ -566,7 +574,10 @@ export function useWebRTCCall(me: CallPeer) {
   }, []);
 
   const handleRemoteEnd = useCallback(
-    (kind: 'decline' | 'cancel' | 'end' | 'busy', payload: CallControlPayload) => {
+    (
+      kind: 'decline' | 'cancel' | 'end' | 'busy',
+      payload: CallControlPayload,
+    ) => {
       if (payload.callId !== callIdRef.current) return;
       const message =
         kind === 'decline'
@@ -594,8 +605,9 @@ export function useWebRTCCall(me: CallPeer) {
     }
     const remote = remoteStreamRef.current;
     const live =
-      remote?.getVideoTracks().some((t) => t.readyState === 'live' && !t.muted) ??
-      false;
+      remote
+        ?.getVideoTracks()
+        .some((t) => t.readyState === 'live' && !t.muted) ?? false;
     setRemoteHasVideo(live);
   }, []);
 
@@ -674,11 +686,6 @@ export function useWebRTCCall(me: CallPeer) {
     void signal(EVENTS.CALL_VIDEO, { on: false });
   }, [signal]);
 
-  const stopScreenShare = useCallback(async () => {
-    if (!screenTrackRef.current) return;
-    await clearLocalVideo();
-  }, [clearLocalVideo]);
-
   const toggleCam = useCallback(async () => {
     // Already showing camera → turn it off.
     if (camOnRef.current && !screenTrackRef.current) {
@@ -696,7 +703,8 @@ export function useWebRTCCall(me: CallPeer) {
       localVideoTrackRef.current = track;
       camOnRef.current = true;
       localStreamRef.current?.addTrack(track);
-      if (videoSenderRef.current) await videoSenderRef.current.replaceTrack(track);
+      if (videoSenderRef.current)
+        await videoSenderRef.current.replaceTrack(track);
       setCamOn(true);
       if (localStreamRef.current) setLocalStream(localStreamRef.current);
       void signal(EVENTS.CALL_VIDEO, { on: true });
@@ -739,7 +747,8 @@ export function useWebRTCCall(me: CallPeer) {
     }
     screenTrackRef.current = track;
     localStreamRef.current?.addTrack(track);
-    if (videoSenderRef.current) await videoSenderRef.current.replaceTrack(track);
+    if (videoSenderRef.current)
+      await videoSenderRef.current.replaceTrack(track);
     // The browser's own "Stop sharing" control ends the track directly.
     track.onended = () => {
       void clearLocalVideo();
@@ -765,7 +774,10 @@ export function useWebRTCCall(me: CallPeer) {
     const onPageHide = () => {
       const st = statusRef.current;
       if (st !== 'idle' && st !== 'ended') {
-        void signal(st === 'outgoing' ? EVENTS.CALL_CANCEL : EVENTS.CALL_END, {});
+        void signal(
+          st === 'outgoing' ? EVENTS.CALL_CANCEL : EVENTS.CALL_END,
+          {},
+        );
       }
     };
     window.addEventListener('pagehide', onPageHide);

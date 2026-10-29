@@ -63,8 +63,6 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
   const [tagDraft, setTagDraft] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [available, setAvailable] = useState<boolean | null>(null);
 
   function addTag(raw: string) {
     const normalized = normalizeTag(raw);
@@ -97,26 +95,6 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
 
   const usernameChanged =
     username.toLowerCase() !== profile.username.toLowerCase();
-
-  async function checkUsername(value: string) {
-    setUsername(value);
-    setAvailable(null);
-    const clean = value.trim().toLowerCase();
-    if (!clean || clean === profile.username.toLowerCase()) return;
-    if (!/^[a-z0-9_]{3,20}$/.test(clean)) {
-      setAvailable(false);
-      return;
-    }
-    setChecking(true);
-    try {
-      const res = await isUsernameAvailable(clean);
-      setAvailable(res.available);
-    } catch {
-      setAvailable(null);
-    } finally {
-      setChecking(false);
-    }
-  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -175,33 +153,40 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
     }
   }
 
-  useEffect(() => {
-    const clean = username.trim().toLowerCase();
-    if (!clean || clean === profile.username.toLowerCase()) {
-      setAvailable(null);
-      setChecking(false);
-      return;
-    }
-    if (!/^[a-z0-9_]{3,20}$/.test(clean)) {
-      setAvailable(false);
-      setChecking(false);
-      return;
-    }
+  // Username availability, checked (debounced) once it's a valid new name.
+  // `checked` holds the latest answer and the name it's for; until that's the
+  // name typed, it's still checking.
+  const [checked, setChecked] = useState<{
+    name: string;
+    available: boolean | null;
+  } | null>(null);
+  const cleanUsername = username.trim().toLowerCase();
+  const unchangedUsername =
+    !cleanUsername || cleanUsername === profile.username.toLowerCase();
+  const validUsername = /^[a-z0-9_]{3,20}$/.test(cleanUsername);
+  const checking =
+    !unchangedUsername && validUsername && checked?.name !== cleanUsername;
+  const available = unchangedUsername
+    ? null
+    : !validUsername
+      ? false
+      : checked?.name === cleanUsername
+        ? checked.available
+        : null;
 
-    setChecking(true);
+  useEffect(() => {
+    if (unchangedUsername || !validUsername) return;
     const t = setTimeout(async () => {
       try {
-        const res = await isUsernameAvailable(clean);
-        setAvailable(res.available);
+        const res = await isUsernameAvailable(cleanUsername);
+        setChecked({ name: cleanUsername, available: res.available });
       } catch {
-        setAvailable(null);
-      } finally {
-        setChecking(false);
+        setChecked({ name: cleanUsername, available: null });
       }
     }, 300);
 
     return () => clearTimeout(t);
-  }, [username, profile.username]);
+  }, [cleanUsername, unchangedUsername, validUsername]);
 
   return (
     <div className='space-y-4'>

@@ -115,12 +115,20 @@ function actionText(
   }
 }
 
-function iconFor(type: NotificationSummary['type']) {
-  if (type === 'FRIEND_REQUEST') return UserPlus;
-  if (type === 'FRIEND_ACCEPT') return UserCheck;
-  if (type === 'LIKE') return Heart;
-  if (type === 'MENTION') return AtSign;
-  return MessageCircle;
+function NotificationIcon({
+  type,
+  className,
+}: {
+  type: NotificationSummary['type'];
+  className?: string;
+}) {
+  if (type === 'FRIEND_REQUEST')
+    return <UserPlus className={className} aria-hidden />;
+  if (type === 'FRIEND_ACCEPT')
+    return <UserCheck className={className} aria-hidden />;
+  if (type === 'LIKE') return <Heart className={className} aria-hidden />;
+  if (type === 'MENTION') return <AtSign className={className} aria-hidden />;
+  return <MessageCircle className={className} aria-hidden />;
 }
 
 const isMessage = (n: NotificationSummary) => n.type === 'MESSAGE';
@@ -173,11 +181,6 @@ export function NotificationBell({
       setLoading(false);
     }
   }, []);
-
-  // Load the list whenever the menu opens.
-  useEffect(() => {
-    if (open) load();
-  }, [open, load]);
 
   // Subscribe for realtime notifications: refresh the badge, reload the open
   // list, and surface a rich toast composed from the structured payload — an
@@ -303,7 +306,7 @@ export function NotificationBell({
     }, 800);
 
     return () => clearTimeout(t);
-  }, [open, tab, requests, messages, likes, mentions, mutate]);
+  }, [open, tab, items, requests, messages, likes, mentions, mutate]);
 
   async function respond(n: NotificationSummary, accept: boolean) {
     if (!n.inviteId || busyId) return;
@@ -384,7 +387,14 @@ export function NotificationBell({
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          // Load the list whenever the menu opens.
+          if (next) void load();
+        }}
+      >
         <PopoverTrigger
           aria-label={
             total > 0
@@ -708,7 +718,6 @@ function RowShell({
   children: React.ReactNode;
   onDelete: () => void;
 }) {
-  const Icon = iconFor(n.type);
   const { t } = useTranslation();
   return (
     <li
@@ -724,7 +733,7 @@ function RowShell({
           className='size-9 shrink-0'
         />
         <span className='bg-primary text-primary-foreground ring-popover absolute -right-1 -bottom-1 grid size-4 place-items-center rounded-full ring-2'>
-          <Icon className='size-2.5' aria-hidden />
+          <NotificationIcon type={n.type} className='size-2.5' />
         </span>
       </div>
       <div className='min-w-0 flex-1'>{children}</div>

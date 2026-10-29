@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 import { motion, useReducedMotion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { PreferenceSettings } from '@/components/settings/preferences';
 import { PrivacySettings } from '@/components/settings/privacy';
 import { ProfileSettings } from '@/components/settings/profile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSyncedState } from '@/hooks/use-synced-state';
 
 type SettingsProfile = {
   id: string;
@@ -34,14 +35,12 @@ export function SettingsTabs({
   profile: SettingsProfile;
   tab: SettingsTab;
 }) {
-  const [active, setActive] = useState<SettingsTab>(tab);
-  const reduce = useReducedMotion();
-  const { t } = useTranslation();
-
   // A real navigation (e.g. the nav's Settings link, or a shared ?tab= URL)
   // re-renders the server component with a new tab; client switches use
   // pushState below and leave this prop untouched, so they don't fight it.
-  useEffect(() => setActive(tab), [tab]);
+  const [active, setActive] = useSyncedState<SettingsTab>(tab);
+  const reduce = useReducedMotion();
+  const { t } = useTranslation();
 
   // Browser back/forward: pushState URLs don't re-run the server component, so
   // read the active tab straight off the URL when the history entry changes.
@@ -55,7 +54,7 @@ export function SettingsTabs({
     }
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
-  }, []);
+  }, [setActive]);
 
   function selectTab(value: string) {
     if (!isSettingsTab(value) || value === active) return;

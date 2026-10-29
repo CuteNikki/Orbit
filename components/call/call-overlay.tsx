@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 
 import { UserAvatar } from '@/components/user/user-avatar';
 import type { WebRTCCall } from '@/hooks/use-webrtc-call';
+import { useMounted } from '@/hooks/use-mounted';
 
 function formatDuration(sec: number) {
   const m = Math.floor(sec / 60);
@@ -194,8 +195,7 @@ function RoundButton({
 // back to the card.
 export function CallOverlay({ call }: { call: WebRTCCall }) {
   const { t } = useTranslation();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
   const [expanded, setExpanded] = useState(false);
   // Free-drag position of the compact card. `null` = anchored to its default
   // bottom-right corner; once dragged it becomes an explicit top-left offset.

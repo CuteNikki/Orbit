@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { Hash, Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -65,13 +65,22 @@ export function FeedControls({ tab, query, tags }: Props) {
   // Set right before a tab switch so the debounced search-sync below skips one
   // run and can't fight the browse navigation we're about to push.
   const suppress = useRef(false);
+  const listboxId = useId();
 
   const tagsKey = tags.join(',');
 
   // Re-seed local state whenever the URL (server props) changes — e.g. arriving
   // via a #hashtag link, or the browser back button.
-  useEffect(() => setText(query), [query]);
-  useEffect(() => setLocalTags(tags), [tagsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    setText(query);
+  }
+  const [prevTagsKey, setPrevTagsKey] = useState(tagsKey);
+  if (tagsKey !== prevTagsKey) {
+    setPrevTagsKey(tagsKey);
+    setLocalTags(tags);
+  }
 
   // Push local search state into the URL, debounced so typing doesn't fire a
   // navigation per keystroke. Skips when the URL already matches (prevents a
@@ -99,11 +108,13 @@ export function FeedControls({ tab, query, tags }: Props) {
   const open = partial !== null && suggests.length > 0;
 
   // Suggest existing tags for the trailing #partial (debounced, stale-dropped).
+  const [prevPartial, setPrevPartial] = useState(partial);
+  if (partial !== prevPartial) {
+    setPrevPartial(partial);
+    if (!partial) setSuggests([]);
+  }
   useEffect(() => {
-    if (partial === null || partial.length < 1) {
-      setSuggests([]);
-      return;
-    }
+    if (!partial) return;
     let live = true;
     const id = setTimeout(async () => {
       try {
@@ -228,15 +239,18 @@ export function FeedControls({ tab, query, tags }: Props) {
                 ? t('app.feed.controls.placeholderWithTags')
                 : t('app.feed.controls.placeholder')
             }
+            role='combobox'
             aria-label={t('app.feed.controls.searchAria')}
             aria-autocomplete='list'
             aria-expanded={open}
+            aria-controls={listboxId}
             className='placeholder:text-muted-foreground h-6 min-w-24 flex-1 bg-transparent text-sm outline-none'
           />
         </div>
 
         {open ? (
           <ul
+            id={listboxId}
             role='listbox'
             // Keep focus in the input so the click lands before onBlur closes us.
             onMouseDown={(e) => e.preventDefault()}

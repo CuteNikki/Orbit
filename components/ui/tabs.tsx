@@ -23,12 +23,10 @@ function Tabs({
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   const indicatorId = React.useId();
   // Mirror the active tab (controlled or not) so the indicator knows where to sit.
-  const [current, setCurrent] = React.useState<string | undefined>(
+  const [uncontrolled, setCurrent] = React.useState<string | undefined>(
     value ?? defaultValue,
   );
-  React.useEffect(() => {
-    if (value !== undefined) setCurrent(value);
-  }, [value]);
+  const current = value !== undefined ? value : uncontrolled;
 
   return (
     <TabsContext.Provider value={{ value: current, indicatorId }}>

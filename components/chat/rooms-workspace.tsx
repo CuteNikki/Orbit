@@ -157,9 +157,9 @@ export function RoomsWorkspace({
 
   // Edge-fade tracking for the three independently-scrolling panes: the channel
   // list, the desktop member list, and the mobile members dialog.
-  const channelFade = useScrollFade<HTMLDivElement>();
-  const userFade = useScrollFade<HTMLDivElement>();
-  const mobileUserFade = useScrollFade<HTMLDivElement>();
+  const [channelFadeRef, channelFade] = useScrollFade<HTMLDivElement>();
+  const [userFadeRef, userFade] = useScrollFade<HTMLDivElement>();
+  const [mobileUserFadeRef, mobileUserFade] = useScrollFade<HTMLDivElement>();
 
   const members = useRoomMembers(activeChatId);
   const activeRoom = rooms.find((r) => r.id === activeChatId) ?? null;
@@ -191,30 +191,37 @@ export function RoomsWorkspace({
         setLoading(false);
       }
     },
-    [router, mutate],
+    [router, mutate, t],
   );
+
+  // Close the channel once the URL no longer names one (back-forward nav).
+  const [prevUrlChatId, setPrevUrlChatId] = useState(urlChatId);
+  if (urlChatId !== prevUrlChatId) {
+    setPrevUrlChatId(urlChatId);
+    if (!urlChatId) setActiveChatId(null);
+  }
 
   // Open the channel referenced in the URL on first load / back-forward nav.
   useEffect(() => {
     if (urlChatId && loadedFor.current !== urlChatId) {
       void openChannel(urlChatId);
     }
-    if (!urlChatId) {
-      loadedFor.current = null;
-      setActiveChatId(null);
-    }
+    if (!urlChatId) loadedFor.current = null;
   }, [urlChatId, openChannel]);
 
+  const checkChannelFade = channelFade.check;
+  const checkUserFade = userFade.check;
+  const checkMobileUserFade = mobileUserFade.check;
   useEffect(() => {
-    channelFade.check();
-    userFade.check();
-    mobileUserFade.check();
+    checkChannelFade();
+    checkUserFade();
+    checkMobileUserFade();
   }, [
     rooms.length,
     members.length,
-    channelFade.check,
-    userFade.check,
-    mobileUserFade.check,
+    checkChannelFade,
+    checkUserFade,
+    checkMobileUserFade,
   ]);
 
   async function handleCreate(e: React.SubmitEvent) {
@@ -283,7 +290,7 @@ export function RoomsWorkspace({
           <div className='relative min-h-0 flex-1'>
             <nav
               className='xs:p-4 h-full overflow-y-auto p-2'
-              ref={channelFade.ref}
+              ref={channelFadeRef}
               onScroll={channelFade.check}
             >
               {rooms.length === 0 ? (
@@ -397,7 +404,7 @@ export function RoomsWorkspace({
             <div className='relative min-h-0 flex-1'>
               <div
                 className='xs:p-4 h-full scrollbar-none overflow-y-auto p-2 pt-0!'
-                ref={userFade.ref}
+                ref={userFadeRef}
                 onScroll={userFade.check}
               >
                 {members.length === 0 ? (
@@ -565,7 +572,7 @@ export function RoomsWorkspace({
           <div className='relative min-w-0'>
             <div
               className='max-h-[60vh] min-w-0 overflow-y-auto'
-              ref={mobileUserFade.ref}
+              ref={mobileUserFadeRef}
               onScroll={mobileUserFade.check}
             >
               {members.length === 0 ? (

@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { Channel } from 'pusher-js';
 import { acquireChannel, releaseChannel } from '@/lib/pusher/client';
 import { chatChannel, EVENTS } from '@/lib/pusher/channels';
@@ -40,15 +46,22 @@ export function useChat({
   // whenever these change. Keep them in refs so handleNew still reads
   // current values instead of whatever was captured at subscribe time.
   const prefsRef = useRef(prefs);
-  prefsRef.current = prefs;
   const notifyCategoryRef = useRef(notifyCategory);
-  notifyCategoryRef.current = notifyCategory;
   const currentUserIdRef = useRef(currentUserId);
-  currentUserIdRef.current = currentUserId;
+  useLayoutEffect(() => {
+    prefsRef.current = prefs;
+    notifyCategoryRef.current = notifyCategory;
+    currentUserIdRef.current = currentUserId;
+  });
 
-  useEffect(() => {
+  // Start over from new initial messages (another chat, or a refetch) as
+  // they arrive, while rendering rather than a render later from an effect
+  const [prevInitialMessages, setPrevInitialMessages] =
+    useState(initialMessages);
+  if (initialMessages !== prevInitialMessages) {
+    setPrevInitialMessages(initialMessages);
     setMessages(initialMessages);
-  }, [initialMessages]);
+  }
 
   useEffect(() => {
     const channel = acquireChannel(chatChannel(chatId));
@@ -83,9 +96,7 @@ export function useChat({
 
     // An edit or soft-delete: swap the matching row in place, keeping order.
     const handleUpdated = (msg: ChatMessage) => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === msg.id ? msg : m)),
-      );
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)));
     };
 
     channel.bind(EVENTS.NEW_MESSAGE, handleNew);

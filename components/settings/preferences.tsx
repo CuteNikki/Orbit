@@ -1,7 +1,6 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
 
 import {
   AtSignIcon,
@@ -36,6 +35,7 @@ import { useNotificationPrefs } from '@/components/notification-prefs-provider';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { useMounted } from '@/hooks/use-mounted';
 
 const CATEGORY_META: {
   key: NotificationCategory;
@@ -53,11 +53,7 @@ export function PreferenceSettings() {
   const { prefs, update } = useNotificationPrefs();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   function setMaster(
     patch: Partial<Pick<NotificationPreferences, 'soundEnabled' | 'volume'>>,

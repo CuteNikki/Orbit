@@ -86,8 +86,7 @@ export async function reportUser({
   }
 
   // Resolve + validate the pinned target (post/message must belong to the
-  // reported user), and settle the report's target kind.
-  let target_kind: ReportTargetKind = 'USER';
+  // reported user). Its kind isn't stored; it's read off postId/messageId.
   let resolvedPostId: string | null = null;
   let resolvedMessageId: string | null = null;
 
@@ -102,7 +101,6 @@ export async function reportUser({
       throw new Error('That post does not belong to the reported user');
     }
     resolvedPostId = p.id;
-    target_kind = 'POST';
   } else if (messageId) {
     const [m] = await db
       .select({ id: message.id, senderId: message.senderId })
@@ -114,7 +112,6 @@ export async function reportUser({
       throw new Error('That message does not belong to the reported user');
     }
     resolvedMessageId = m.id;
-    target_kind = 'MESSAGE';
   }
 
   const reference = await uniqueReportReference();
@@ -233,8 +230,7 @@ export async function listReports(
   const reported = aliasedTable(user, 'reported');
   const reviewer = aliasedTable(user, 'reviewer');
 
-  const where =
-    filter === 'ALL' ? undefined : eq(report.status, filter);
+  const where = filter === 'ALL' ? undefined : eq(report.status, filter);
 
   const rows = await db
     .select({
@@ -469,7 +465,10 @@ export async function getReportedMessageContext(
       .from(message)
       .leftJoin(user, eq(user.id, message.senderId))
       .where(
-        and(eq(message.chatId, anchor.chatId), lt(message.createdAt, anchor.createdAt)),
+        and(
+          eq(message.chatId, anchor.chatId),
+          lt(message.createdAt, anchor.createdAt),
+        ),
       )
       .orderBy(desc(message.createdAt))
       .limit(CONTEXT_WINDOW),
@@ -478,7 +477,10 @@ export async function getReportedMessageContext(
       .from(message)
       .leftJoin(user, eq(user.id, message.senderId))
       .where(
-        and(eq(message.chatId, anchor.chatId), gt(message.createdAt, anchor.createdAt)),
+        and(
+          eq(message.chatId, anchor.chatId),
+          gt(message.createdAt, anchor.createdAt),
+        ),
       )
       .orderBy(asc(message.createdAt))
       .limit(CONTEXT_WINDOW),

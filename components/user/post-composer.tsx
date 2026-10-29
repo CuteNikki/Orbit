@@ -9,13 +9,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-export function PostComposer({
-  userName,
-  userImage,
-}: {
-  userName: string;
-  userImage: string | null;
-}) {
+export function PostComposer() {
   const router = useRouter();
   const { t } = useTranslation();
   const fileRef = useRef<HTMLInputElement>(null);

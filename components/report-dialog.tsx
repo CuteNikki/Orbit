@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -57,12 +57,15 @@ export function ReportDialog({
   const [submitting, setSubmitting] = useState(false);
 
   // Clear the draft whenever a fresh target opens the dialog.
-  useEffect(() => {
-    if (open) {
+  const draftFor = open ? (target?.reportedUserId ?? '') : null;
+  const [prevDraftFor, setPrevDraftFor] = useState(draftFor);
+  if (draftFor !== prevDraftFor) {
+    setPrevDraftFor(draftFor);
+    if (draftFor !== null) {
       setReason('');
       setSubmitting(false);
     }
-  }, [open, target?.reportedUserId]);
+  }
 
   const noun = target ? targetNoun(target) : 'user';
   const who = target?.name?.trim();

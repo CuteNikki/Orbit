@@ -94,7 +94,7 @@ export default async function FeedPage({
         ) : (
           <>
             <div className='mt-3 mb-4'>
-              <PostComposer userName={me.name} userImage={me.image} />
+              <PostComposer />
             </div>
 
             {posts.length === 0 ? (

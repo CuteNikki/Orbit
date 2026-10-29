@@ -678,7 +678,6 @@ export function ChatRoom({
                                   className='block cursor-zoom-in p-1'
                                   aria-label={t('chat.room.openImage')}
                                 >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={m.imageUrl}
                                     alt={t('chat.room.sharedImage')}
@@ -880,7 +879,6 @@ export function ChatRoom({
           )}
           {pendingImage && (
             <div className='relative self-start'>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={pendingImage}
                 alt={t('chat.room.pendingPreview')}
@@ -935,11 +933,7 @@ export function ChatRoom({
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
-                    if (
-                      (e.nativeEvent as any).isComposing ||
-                      (e as any).keyCode === 229
-                    )
-                      return;
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                     e.preventDefault();
                     submit(e);
                   }

@@ -3,7 +3,13 @@
 import { VariantProps } from 'class-variance-authority';
 import type { TFunction } from 'i18next';
 import Link from 'next/link';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -566,18 +572,22 @@ function ResetDialog({
   const open = target !== null;
   const targetId = target?.id ?? null;
 
-  useEffect(() => {
-    if (!targetId) return;
-    setFields({
-      name: true,
-      username: true,
-      image: true,
-      bio: true,
-      interests: true,
-      posts: true,
-    });
-    setSubmitting(false);
-  }, [targetId]);
+  // Reset local state whenever a new target opens the dialog.
+  const [prevTargetId, setPrevTargetId] = useState(targetId);
+  if (targetId !== prevTargetId) {
+    setPrevTargetId(targetId);
+    if (targetId) {
+      setFields({
+        name: true,
+        username: true,
+        image: true,
+        bio: true,
+        interests: true,
+        posts: true,
+      });
+      setSubmitting(false);
+    }
+  }
 
   const anySelected = Object.values(fields).some(Boolean);
 
@@ -725,13 +735,16 @@ function BanDialog({
   const open = target !== null;
   const targetId = target?.id ?? null;
 
-  useEffect(() => {
-    if (!targetId) return;
-    setReason('');
-    setDurationKey('7');
-    setBanIp(false);
-    setSubmitting(false);
-  }, [targetId]);
+  const [prevTargetId, setPrevTargetId] = useState(targetId);
+  if (targetId !== prevTargetId) {
+    setPrevTargetId(targetId);
+    if (targetId) {
+      setReason('');
+      setDurationKey('7');
+      setBanIp(false);
+      setSubmitting(false);
+    }
+  }
 
   async function submit() {
     if (!target) return;
@@ -920,7 +933,7 @@ function HistoryDialog({
   viewerRole: Role;
 }) {
   const [entries, setEntries] = useState<BanHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(target !== null);
   const [liftingId, setLiftingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Search and sort state
@@ -952,24 +965,34 @@ function HistoryDialog({
     setIsScrolledBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 10);
   };
 
+  // Start over whenever a new target opens the dialog.
+  const [prevTargetId, setPrevTargetId] = useState(targetId);
+  if (targetId !== prevTargetId) {
+    setPrevTargetId(targetId);
+    if (targetId) {
+      setSearchQuery('');
+      setSortBy('newest');
+      setLoading(true);
+      setEntries([]);
+    }
+  }
+
+  // Reads the current language without refetching when it changes
+  const onLoadError = useEffectEvent((err: unknown) => {
+    toast.error(
+      err instanceof Error ? err.message : t('moderation.history.couldNotLoad'),
+    );
+  });
+
   useEffect(() => {
     if (!targetId) return;
-    setSearchQuery('');
-    setSortBy('newest');
     let cancelled = false;
-    setLoading(true);
-    setEntries([]);
     getBanHistory(targetId)
       .then((rows) => {
         if (!cancelled) setEntries(rows);
       })
       .catch((err) => {
-        if (!cancelled)
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : t('moderation.history.couldNotLoad'),
-          );
+        if (!cancelled) onLoadError(err);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

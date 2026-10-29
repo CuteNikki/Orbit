@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -26,21 +26,30 @@ export function UserPreviewDialog({
 }) {
   const { t } = useTranslation();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(userId !== null);
+
+  // Closing clears the profile; another user's loads in its place.
+  const [prevUserId, setPrevUserId] = useState(userId);
+  if (userId !== prevUserId) {
+    setPrevUserId(userId);
+    if (userId) setLoading(true);
+    else setProfile(null);
+  }
+
+  // Reads the current language without refetching when it changes
+  const onLoadError = useEffectEvent(() => {
+    toast.error(t('profile.couldNotLoad'));
+  });
 
   useEffect(() => {
-    if (!userId) {
-      setProfile(null);
-      return;
-    }
+    if (!userId) return;
     let active = true;
-    setLoading(true);
     getProfilePreview(userId)
       .then((p) => {
         if (active) setProfile(p);
       })
       .catch(() => {
-        if (active) toast.error(t('profile.couldNotLoad'));
+        if (active) onLoadError();
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -71,8 +80,8 @@ export function UserPreviewDialog({
             <UserAvatar
               name={profile.name}
               image={profile.image}
-                className='size-20'
-                fontSize='3xl'
+              className='size-20'
+              fontSize='3xl'
             />
             <div className='flex flex-col'>
               <span className='text-lg font-semibold text-balance'>
